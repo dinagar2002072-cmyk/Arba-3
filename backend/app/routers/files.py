@@ -28,7 +28,7 @@ router = APIRouter(tags=['files'])
 
 @router.post(f"{API_PREFIX}/admin/master-data/{{master_type}}/upload", status_code=201)
 async def upload_master_file(
-    master_type: Literal["customer", "product"],
+    master_type: Literal["customer", "product", "sellin"],
     payload: MasterFileUpload,
     user: CurrentUser,
 ) -> dict[str, Any]:
@@ -51,7 +51,11 @@ async def upload_master_file(
     file_id = secrets.token_hex(16)
     destination = INBOUND_QUEUE_DIR / f"{file_id}{Path(name).suffix.lower()}"
     destination.write_bytes(contents)
-    category = "CUSTOMER_MASTER" if master_type == "customer" else "PRODUCT_MASTER"
+    category = {
+        "customer": "CUSTOMER_MASTER",
+        "product": "PRODUCT_MASTER",
+        "sellin": "SELLIN_ACTUALS",
+    }[master_type]
     try:
         with DB_LOCK, connect() as db:
             with db:

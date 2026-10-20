@@ -120,7 +120,7 @@ export type Page =
   | "report"
   | "listing"
   | "configuration";
-export type ConfigTab = "access" | "customer" | "product" | "tactics" | "phasing" | "files" | "roles";
+export type ConfigTab = "access" | "customer" | "sellin" | "product" | "tactics" | "phasing" | "files" | "roles";
 
 export type PageProps = {
   page: Page;

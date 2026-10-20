@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
+import math
 import re
 import sqlite3
 import zipfile
@@ -22,7 +23,7 @@ from app.config import (
 )
 from app.db import DB_LOCK, connect
 from app.services.audit import audit, log_status, promotion_snapshot
-from app.utils import iso_week, utcnow
+from app.utils import iso_week, utcnow, week_monday
 
 
 def master_file_rows(filename: str, contents: bytes) -> list[tuple[int, dict[str, str]]]:
@@ -174,6 +175,71 @@ def apply_customer_master(db: sqlite3.Connection, data: list[tuple[int, dict[str
                 "VALUES(?,?,?,?,?)",
                 (market, name, parent, external_code, utcnow().isoformat()),
             )
+    return len(rows)
+
+
+def apply_sellin_actuals(
+    db: sqlite3.Connection, data: list[tuple[int, dict[str, str]]]
+) -> int:
+    rows: list[tuple[int, str, int, str, str, float]] = []
+    markets = {
+        row["p10_sales_org"]: row["code"]
+        for row in db.execute("SELECT code,p10_sales_org FROM market WHERE active=1")
+    }
+    market_codes = set(markets.values())
+    seen: set[tuple[str, int, str, str]] = set()
+    for row_number, row in data:
+        try:
+            sales_org = required_master_value(row, "Sales Org", "Sales Organization")
+            market_code = CUSTOMER_MASTER_SALES_ORG_MARKET_MAP.get(sales_org, sales_org)
+            if market_code not in market_codes:
+                market_code = markets.get(sales_org)
+            if market_code is None:
+                raise ValueError(f"unknown or inactive sales organization {sales_org}")
+            plan_account_id = required_master_value(row, "Plan Account ID")
+            customer = db.execute(
+                "SELECT id FROM customer_l04 WHERE market_code=? AND external_code=?",
+                (market_code, plan_account_id),
+            ).fetchone()
+            if customer is None:
+                raise ValueError(
+                    f"unknown Plan Account ID {plan_account_id} for Sales Org {sales_org}"
+                )
+            material_id = required_master_value(row, "Material ID")
+            product = db.execute(
+                "SELECT code FROM product_p09 WHERE code=?",
+                (material_id,),
+            ).fetchone()
+            if product is None:
+                raise ValueError(f"unknown Material ID {material_id}")
+            week = required_master_value(row, "Week Number")
+            if not re.fullmatch(r"\d{4}-W\d{2}", week):
+                raise ValueError("Week Number must use year-qualified ISO format YYYY-Www")
+            week_monday(week)
+            raw_volume = required_master_value(row, "Volume in Cases", "Volume Cases")
+            volume = float(raw_volume.replace(",", ""))
+            if not math.isfinite(volume) or volume < 0:
+                raise ValueError("Volume in Cases must be a finite non-negative number")
+        except (ValueError, OverflowError) as exc:
+            raise ValueError(f"Row {row_number}: {exc}") from exc
+        key = (market_code, int(customer["id"]), str(product["code"]), week)
+        if key in seen:
+            raise ValueError(
+                f"Row {row_number}: duplicate Sales Org / Plan Account / Material / Week combination"
+            )
+        seen.add(key)
+        rows.append((row_number, market_code, int(customer["id"]), str(product["code"]), week, volume))
+    if not rows:
+        raise ValueError("The Sell-In Actuals file contains no data rows")
+
+    loaded_at = utcnow().isoformat()
+    db.executemany(
+        "INSERT INTO actual_sellin(market_code,customer_id,p09_code,iso_week,qty_cs,loaded_at) "
+        "VALUES(?,?,?,?,?,?) ON CONFLICT(market_code,customer_id,p09_code,iso_week) "
+        "DO UPDATE SET qty_cs=excluded.qty_cs,loaded_at=excluded.loaded_at",
+        [(market, customer_id, product, week, volume, loaded_at)
+         for _, market, customer_id, product, week, volume in rows],
+    )
     return len(rows)
 
 
@@ -376,11 +442,15 @@ def process_master_file(file_id: int, user_email: str) -> dict[str, Any]:
         try:
             data = master_file_rows(filename, file_bytes)
             with db:
-                count = (
-                    apply_customer_master(db, data)
-                    if category == "CUSTOMER_MASTER"
-                    else apply_product_master(db, data, user_email)
-                )
+                processors = {
+                    "CUSTOMER_MASTER": lambda: apply_customer_master(db, data),
+                    "PRODUCT_MASTER": lambda: apply_product_master(db, data, user_email),
+                    "SELLIN_ACTUALS": lambda: apply_sellin_actuals(db, data),
+                }
+                processor = processors.get(category)
+                if processor is None:
+                    raise ValueError(f"Unsupported inbound file category: {category}")
+                count = processor()
                 db.execute(
                     "UPDATE managed_file SET row_count=?,message=? WHERE id=?",
                     (count, f"Validated and applied {count} rows", file_id),

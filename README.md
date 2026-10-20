@@ -289,8 +289,9 @@ The first run creates only the administrator account:
 To choose the password yourself, set `ARBA_INITIAL_PASSWORD` (at least 12
 characters) **before** the first run, or [reset the database](#reset-the-database).
 
-Customer and product data are not seeded. Upload the Customer Master and
-Product Master through **Configuration → Master Data** before planning.
+Customer, product, and sell-in actuals are not seeded. Upload the Customer
+Master and Product Master through Configuration before planning; use the
+Sell-In Actuals tab to load historical sales.
 Newly loaded plan accounts must also be assigned to users through **Access
 Management** where required by the user's role.
 
@@ -401,7 +402,7 @@ and the weeks currently shown by the year/quarter filters:
 Upload validates each plan account, listed P10 OSKU, future week, and forecast
 quantity before saving. Actual LY values are not included or changed.
 
-### Master data extracts (Configuration → Master Data), CSV or XLSX
+### Master data and actuals extracts (Configuration), CSV or XLSX
 
 - Download the CSV template from the relevant Customer Master or Product Master
   page in Configuration. Keep the template headers unchanged and add one record
@@ -413,6 +414,14 @@ quantity before saving. Actual LY values are not included or changed.
 - **Product master:** required columns are `P10 OSKU`, `Product Description`,
   and `Brand`. `Sub-brand` and `Category` are optional. Each row represents a
   unique SAP S/4HANA material at Product Hierarchy level 10 (P10 OSKU), not P09.
+- **Sell-In Actuals:** required columns are `Sales Org`, `Plan Account ID`,
+  `Material ID`, `Week Number`, and `Volume in Cases`. Plan Account ID must
+  match the Customer Master `Plan Account Code L04`; Material ID must match a
+  Product Master `P10 OSKU`. Enter Week Number as a year-qualified ISO week
+  (for example, `2026-W40`). Each upload updates matching Sales Org / Plan
+  Account / Material / Week values and leaves other weeks unchanged. These
+  actuals feed Sales Data, Volume Report, and the Weekly Baseline ACTUAL LY
+  row where their respective week ranges apply.
 - A product extract is a full snapshot. Products omitted from it are marked
   inactive and remain visible for existing listings, promotions, and history,
   but cannot be added to new promotions or edited in Weekly Baseline Volume.

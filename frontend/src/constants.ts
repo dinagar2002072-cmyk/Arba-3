@@ -12,6 +12,7 @@ export const pageNames: Record<Page, string> = {
 export const configNames: Record<ConfigTab, string> = {
   access: "Create User ID",
   customer: "Customer Master",
+  sellin: "Sell-In Actuals",
   product: "Product Master",
   tactics: "Tactics",
   phasing: "Phasing",

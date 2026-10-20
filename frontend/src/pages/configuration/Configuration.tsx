@@ -20,7 +20,7 @@ export function Configuration(props: {
   refresh: () => void;
 }) {
   const tabs: ConfigTab[] = props.isSystemAdmin
-    ? ["access", "roles", "tactics", "phasing", "files", "customer", "product"]
+    ? ["access", "roles", "tactics", "phasing", "files", "customer", "product", "sellin"]
     : props.canEditConfiguration ? ["access", "tactics", "phasing"] : ["access"];
   return <>
     <Heading title="Configuration" />
@@ -33,7 +33,7 @@ export function Configuration(props: {
       >{configNames[tab]}</button>)}
     </nav>
     {props.activeTab === "access" && <AccessManagement {...props} />}
-    {(props.activeTab === "customer" || props.activeTab === "product") &&
+    {(props.activeTab === "customer" || props.activeTab === "sellin" || props.activeTab === "product") &&
       <MasterDataConfig {...props} type={props.activeTab} />}
     {props.activeTab === "tactics" && props.canManageTactics && <TacticsConfig {...props} />}
     {props.activeTab === "phasing" && props.canManageTactics && <PhasingConfig {...props} />}

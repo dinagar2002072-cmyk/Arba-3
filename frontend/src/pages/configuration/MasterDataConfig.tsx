@@ -4,7 +4,7 @@ import { type Bootstrap } from "../../types";
 import { encodeFile, errorText } from "../../utils";
 
 export function MasterDataConfig(props: {
-  type: "customer" | "product";
+  type: "customer" | "product" | "sellin";
   bootstrap: Bootstrap;
   flash: (message: string) => void;
   setError: (message: string) => void;
@@ -14,10 +14,13 @@ export function MasterDataConfig(props: {
   const [queued, setQueued] = useState<{ id: number; filename: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const customerMode = props.type === "customer";
-  const title = customerMode ? "Customer Master" : "Product Master";
+  const sellinMode = props.type === "sellin";
+  const title = customerMode ? "Customer Master" : sellinMode ? "Sell-In Actuals" : "Product Master";
   const templateColumns = customerMode
     ? ["Sales Org", "Plan Account Code L04", "Plan Account Name", "Parent L03"]
-    : ["P10 OSKU", "Product Description", "Brand", "Sub-brand", "Category"];
+    : sellinMode
+      ? ["Sales Org", "Plan Account ID", "Material ID", "Week Number", "Volume in Cases"]
+      : ["P10 OSKU", "Product Description", "Brand", "Sub-brand", "Category"];
   const salesOrgs = [...new Set(props.bootstrap.markets.map((market) => market.p10_sales_org))].sort();
 
   function downloadTemplate() {
@@ -25,7 +28,7 @@ export function MasterDataConfig(props: {
     const url = URL.createObjectURL(new Blob([content], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `${props.type}_master_template.csv`;
+    link.download = `${props.type}_template.csv`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -71,6 +74,10 @@ export function MasterDataConfig(props: {
         <span><strong>Required:</strong> Sales Org, Plan Account Code L04, Plan Account Name. <strong>Optional:</strong> Parent L03.</span>
         <span>Sales Org must match a configured sales organization ({salesOrgs.length ? salesOrgs.join(", ") : "no active sales organizations are configured"}). You may use a Market Code instead, such as {props.bootstrap.markets[0]?.code ?? "a configured market code"}.</span>
         <span>Each row is one plan account (Customer L04) in one sales organization.</span>
+      </> : sellinMode ? <>
+        <span><strong>Required:</strong> Sales Org, Plan Account ID, Material ID, Week Number, Volume in Cases.</span>
+        <span>Use the Sales Org and Plan Account ID from Customer Master and the Material ID from Product Master. Enter Week Number as a year-qualified ISO week, for example 2026-W40.</span>
+        <span>Rows update actual sales for matching Sales Org, Plan Account, Material, and Week. Existing matching weeks are replaced; other weeks remain unchanged.</span>
       </> : <>
         <span><strong>Required:</strong> P10 OSKU, Product Description, Brand. <strong>Optional:</strong> Sub-brand, Category.</span>
         <span>P10 OSKU is the SAP S/4HANA material number at Product Hierarchy level 10. Use one row per OSKU; this is the planning product key shared by the baseline, listing, promotion, reporting, and feed pages. Do not upload P09-level products.</span>
