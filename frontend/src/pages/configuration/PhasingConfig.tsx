@@ -139,8 +139,12 @@ export function PhasingConfig(props: {
 
   return <>
     <section className="panel">
-      <h2>Promotion Uplift Phasing</h2>
-      <p>Set how an approved promotion’s uplift is distributed across its ISO weeks. Profiles apply to every product for the selected Sales Org and Plan Account. Without a saved profile, uplift is split equally.</p>
+      <div className="panel-heading">
+        <div>
+          <h2>Promotion Uplift Phasing</h2>
+          <p>Set how an approved promotion’s uplift is distributed across its Shipment weeks. Profiles apply to every product for the selected Sales Org and Plan Account. Without a saved profile, uplift is split equally.</p>
+        </div>
+      </div>
       <form className="config-form phasing-form" onSubmit={(event) => void save(event)}>
         <label>Market / Sales Organization
           <select required value={marketCode} onChange={(event) => {

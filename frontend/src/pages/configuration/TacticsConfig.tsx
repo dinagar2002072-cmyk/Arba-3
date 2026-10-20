@@ -80,8 +80,12 @@ export function TacticsConfig(props: {
 
   return <>
     <section className="panel">
-      <h2>Create Tactic</h2>
-      <p>Tactics are configured per market and sales organization. Only tactics added here can be selected on a promotion.</p>
+      <div className="panel-heading">
+        <div>
+          <h2>Create Tactic</h2>
+          <p>Tactics are configured per market and sales organization. Only tactics added here can be selected on a promotion.</p>
+        </div>
+      </div>
       <form className="config-form tactic-form" onSubmit={(event) => void createTactic(event)}>
         <label>Market / Sales Organization
           <select required value={marketCode} onChange={(event) => setMarketCode(event.target.value)}>

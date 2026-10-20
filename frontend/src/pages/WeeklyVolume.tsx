@@ -94,10 +94,6 @@ export function WeeklyVolume(props: PageProps) {
   return <>
     <Heading title="Weekly Baseline Volume" actions={<>
       {canExport && <button className="button" disabled={!visibleWeeks.length} onClick={() => void exportBaseline()}>Extract Baseline</button>}
-      {canExport && <button className="button" onClick={() => void downloadApiFile(
-        `/baseline/audit/export?market=${encodeURIComponent(props.market)}&customer_id=${props.customerId}`,
-        `baseline_audit_${props.market}_${props.customerId}.xlsx`,
-      ).catch((error: unknown) => props.setError(errorText(error)))}>Download Audit Log</button>}
       {canImport && <>
         <input ref={baselineFileInput} accept=".xlsx" className="visually-hidden" onChange={(event) => void uploadBaseline(event.target.files?.[0])} type="file" />
         <button className="button" onClick={() => baselineFileInput.current?.click()}>Load Baseline</button>
