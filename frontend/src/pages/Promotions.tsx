@@ -158,6 +158,7 @@ export function Promotions(props: PageProps) {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Promotion | null>(null);
+  const [viewing, setViewing] = useState<Promotion | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [productsToAddSelected, setProductsToAddSelected] = useState<string[]>([]);
   const [totals, setTotals] = useState<Record<string, number>>({});
@@ -381,6 +382,37 @@ export function Promotions(props: PageProps) {
   }
   return <>
     <Heading title="Promotions" subtitle={`Promo Count (filtered): ${filteredPromotions.length}`} actions={canEdit ? <button className="button primary" onClick={startCreate}>Create Promotion</button> : undefined} />
+    {viewing && <div className="modal-backdrop" onClick={(event) => {
+      if (event.target === event.currentTarget) setViewing(null);
+    }} role="presentation">
+      <section aria-labelledby="promotion-view-title" aria-modal="true" className="panel promotion-view-modal" role="dialog">
+        <div className="panel-heading">
+          <div><h2 id="promotion-view-title">{viewing.promo_number}</h2><p>{viewing.description || "Promotion details"}</p></div>
+          <button aria-label="Close promotion details" className="button" onClick={() => setViewing(null)} type="button">Close</button>
+        </div>
+        <dl className="promotion-view-details">
+          <div><dt>Plan Account</dt><dd>{viewing.customer_name}</dd></div>
+          <div><dt>Status</dt><dd>{statusLabels[viewing.status] ?? viewing.status}</dd></div>
+          <div><dt>Shipment</dt><dd>{viewing.start_date} – {viewing.end_date}</dd></div>
+          <div><dt>Consumption</dt><dd>{viewing.cons_start} – {viewing.cons_end}</dd></div>
+          <div><dt>Tactic</dt><dd>{viewing.tactic}</dd></div>
+          <div><dt>Incentive</dt><dd>{viewing.incentive_configured
+            ? viewing.incentive_type === "FIXED_LUMPSUM" ? `Lumpsum: ${viewing.incentive_value}` : `${viewing.incentive_value}% per case`
+            : "Not specified"}</dd></div>
+          <div className="promotion-view-comments"><dt>Comments</dt><dd>{viewing.comments || "None"}</dd></div>
+        </dl>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead><tr><th>P10 OSKU</th><th>Product</th><th>Baseline</th><th>Total</th><th>Uplift</th><th>Actual</th></tr></thead>
+            <tbody>{viewing.items.map((item) => <tr key={`${viewing.id}-${item.product}`}>
+              <td>{item.product}</td><td>{item.description}</td><td>{item.baseline}</td><td>{item.total}</td><td>{item.uplift}</td><td>{item.actual}</td>
+            </tr>)}
+              {!viewing.items.length && <tr><td className="empty-cell" colSpan={6}>No products in this promotion.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>}
     {showCreate && <form className="panel form-grid" onSubmit={(event) => void savePromo(event)}>
       <div className="full-width"><h2>{editing ? `Edit ${editing.promo_number}` : "Create Promotion Entry"}</h2></div>
       <label className="full-width">Promotion Name / Description<input maxLength={50} value={description} onChange={(event) => setDescription(event.target.value)} /></label>
@@ -502,7 +534,8 @@ export function Promotions(props: PageProps) {
           return next;
         })} type="checkbox" /></td>
         <td><button className="text-button" onClick={() => togglePromotionDetails(promo.id)}>{expanded.has(promo.id) ? "−" : "+"} {promo.promo_number}</button></td><td>{promo.description}</td><td>{promo.customer_name}</td><td>{promo.start_date} – {promo.end_date}</td><td>{promo.tactic}<small>{promo.incentive_configured ? promo.incentive_type === "FIXED_LUMPSUM" ? `Lumpsum: ${promo.incentive_value}` : `${promo.incentive_value}% per case` : "Incentive not specified"}</small></td><td><span className={`status ${promo.status}`}>{statusLabels[promo.status] ?? promo.status}</span></td><td>{promo.baseline}</td><td>{promo.total}</td><td>{promo.uplift}</td><td className="action-cell">
-        {canEdit && ["NEW", "SAVED"].includes(promo.status) && <button className="button" onClick={() => startEdit(promo)}>Edit</button>}
+          <button className="button" onClick={() => setViewing(promo)} type="button">View</button>
+          {canEdit && ["NEW", "SAVED"].includes(promo.status) && <button className="button" onClick={() => startEdit(promo)}>Edit</button>}
         {canEdit && promo.status === "NEW" && <button className="button primary" onClick={() => void statusAction(promo.id, "save")}>Save</button>}
         {canEdit && promo.status === "SAVED" && <button className="button" onClick={() => void statusAction(promo.id, "confirm")}>Confirm</button>}
         {canApprove && promo.status === "CHANGED" && <button className="button primary" onClick={() => void statusAction(promo.id, "approve")}>Approve</button>}

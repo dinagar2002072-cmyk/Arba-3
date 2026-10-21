@@ -19,6 +19,15 @@ from app.utils import future_weeks, historical_weeks, iso_week, week_monday
 router = APIRouter(tags=['reports'])
 
 
+def _week_month_fractions(monday: date, year: int) -> list[float]:
+    days_by_month = [0] * 12
+    for day_offset in range(7):
+        day = monday + timedelta(days=day_offset)
+        if day.year == year:
+            days_by_month[day.month - 1] += 1
+    return [days / 7 for days in days_by_month]
+
+
 @router.get(f"{API_PREFIX}/history")
 async def sales_history(market: str, customer_id: int, user: CurrentUser) -> dict[str, Any]:
     require_permission(user, "history", "view")
@@ -174,8 +183,8 @@ async def volume_report(
                 months = [0.0] * 12
                 for week in future_weeks(52) + historical_weeks(52):
                     monday = week_monday(week)
-                    thursday = monday + timedelta(days=3)
-                    if thursday.year != year:
+                    month_fractions = _week_month_fractions(monday, year)
+                    if not any(month_fractions):
                         continue
                     actual = db.execute(
                         "SELECT qty_cs FROM actual_sellin WHERE market_code=? AND customer_id=? AND p09_code=? AND iso_week=?",
@@ -193,7 +202,8 @@ async def volume_report(
                             qty += approved_uplift(
                                 db, market, customer["id"], product["code"], week
                             )
-                    months[thursday.month - 1] += qty
+                    for month_index, fraction in enumerate(month_fractions):
+                        months[month_index] += qty * fraction
                 results.append(
                     {
                         "customer": customer["name"],

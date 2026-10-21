@@ -117,10 +117,17 @@ input[type="checkbox"] { width: 16px; min-height: 16px; height: 16px; accent-col
 .baseline-filters { display: flex; align-items: flex-start; gap: 24px; margin: 16px 0; }
 .baseline-filters > label { display: flex; flex-direction: column; gap: 6px; }
 .baseline-filters select { min-width: 110px; }
+.product-hierarchy-filter-button { align-self: flex-end; }
 .quarter-filter { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; }
 .quarter-filter legend { padding: 0 4px; color: #554f48; font-size: 11px; font-weight: 650; }
 .quarter-filter label { display: inline-flex; align-items: center; gap: 6px; }
 .quarter-filter input { width: 15px; min-height: 15px; height: 15px; margin: 0; }
+.weekly-product-filter-modal { width: min(820px, 100%); max-height: calc(100vh - 40px); overflow: auto; margin: 0; background: #fff; }
+.weekly-product-filter-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.weekly-product-filter-fields label { display: flex; flex-direction: column; gap: 6px; color: #554f48; font-size: 11px; font-weight: 650; }
+.weekly-product-filter-fields select { width: 100%; min-width: 0; padding: 5px; }
+.weekly-product-filter-actions { display: flex; flex-wrap: nowrap; margin-top: 16px; }
+.weekly-product-filter-actions > span { flex: 1; }
 .empty-cell { padding: 24px !important; color: #898279; text-align: center; }
 .status { display: inline-block; padding: 4px 7px; border-radius: 20px; background: #f2eee9; color: #696159; font-size: 9px; font-weight: 800; }
 .status.APPROVED, .status.PROCESSED, .status.SUCCESS, .status.approved { background: #e5f4e8; color: #226b37; }
@@ -194,7 +201,7 @@ input[type="checkbox"] { width: 16px; min-height: 16px; height: 16px; accent-col
 .calendar-week.approved, .calendar-legend .approved { background: #e5f4e8; color: #226b37; }
 .calendar-legend { display: flex; gap: 8px; margin: 0 0 12px; }
 .calendar-status { padding: 6px 10px; border-radius: 20px; font-size: 10px; font-weight: 750; }
-.action-cell { min-width: 210px; }
+.action-cell { min-width: 210px; white-space: nowrap; }
 .action-cell .button { margin: 2px; }
 .inline-label { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
 .inline-label input { width: min(320px, 70%); margin: 0; }
@@ -249,6 +256,12 @@ input[type="checkbox"] { width: 16px; min-height: 16px; height: 16px; accent-col
 .edit-user-form > label:not(.user-active-switch) { display: flex; flex-direction: column; gap: 6px; }
 .edit-user-form > .form-actions { grid-column: 1 / -1; }
 .modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: #29262180; }
+.promotion-view-modal { width: min(900px, 100%); max-height: calc(100vh - 40px); overflow: auto; margin: 0; background: #fff; }
+.promotion-view-details { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 18px; }
+.promotion-view-details > div { min-width: 0; }
+.promotion-view-details dt { margin-bottom: 4px; color: var(--muted); font-size: 10px; font-weight: 700; }
+.promotion-view-details dd { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+.promotion-view-comments { grid-column: 1 / -1; }
 .create-user-modal { width: min(980px, 100%); max-height: calc(100vh - 40px); overflow: auto; margin: 0; background: #fff; }
 .config-form { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 14px; align-items: start; }
 .config-form select[multiple], .user-access-row select[multiple] { min-height: 105px; padding: 5px; }
@@ -317,6 +330,8 @@ input[type="checkbox"] { width: 16px; min-height: 16px; height: 16px; accent-col
 }
 @media (max-width: 460px) {
   .selection-bar, .form-grid, .config-form, .schedule-grid, .user-access-row { grid-template-columns: 1fr; }
+  .promotion-view-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .weekly-product-filter-fields { grid-template-columns: 1fr; }
   .promotion-dates { grid-template-columns: 1fr; }
   .full-width, .form-actions { grid-column: 1; }
   .login-footer span:last-child { display: none; }
